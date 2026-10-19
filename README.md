@@ -39,13 +39,13 @@ editor, agent, or human that ignores the protocol.
 
 Requirements: **Python 3.10+**, **Git**, and agents with terminal access to the
 **same Git working tree**. Windows, macOS, and Linux are CI targets; see
-[validation](docs/validation.md) for what has actually been run locally.
+[validation](docs/validation.md) for test coverage and verification details.
 
-Start from a local checkout of this tool. No public package release or GitHub
-remote is assumed in these commands.
+Clone Agent Accord, install the CLI, and initialize coordination in your project:
 
 ```sh
-cd /path/to/agent-accord
+git clone https://github.com/shafikhw/agent-accord.git
+cd agent-accord
 python -m pip install .
 agent-accord --root /path/to/your-project init
 ```
@@ -53,6 +53,7 @@ agent-accord --root /path/to/your-project init
 PowerShell example (quote paths containing spaces):
 
 ```powershell
+git clone https://github.com/shafikhw/agent-accord.git 'C:\work\agent-accord'
 Set-Location 'C:\work\agent-accord'
 python -m pip install .
 agent-accord --root 'C:\work\My Project' init
@@ -206,39 +207,15 @@ python -m pip wheel . --no-deps
 
 There are no runtime or test-framework dependencies. The CI workflow tests
 Windows, macOS, and Linux with Python 3.10 and 3.13, then checks built-package
-installation. Local verification does not imply those remote jobs have run.
+installation.
 
-## Create your GitHub repository
+## Contributing
 
-Create an empty GitHub repository named **agent-accord** (or your preferred
-name). This directory is intended to be its own Git repository, with no
-application history or live coordination records. Review the files, then:
+Bug reports, reproducible test cases, documentation improvements, and code
+contributions are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for the
+development workflow and design expectations. For security-sensitive reports,
+follow [SECURITY.md](SECURITY.md).
 
-```sh
-git status --short
-git add .gitattributes .gitignore .github AGENTS.md CHANGELOG.md CONTRIBUTING.md LICENSE README.md SECURITY.md docs pyproject.toml src tests
-git commit -m "Initial release of Agent Accord"
-# Replace YOUR_ACCOUNT with your GitHub user or organization.
-git remote add origin https://github.com/YOUR_ACCOUNT/agent-accord.git
-git push -u origin main
-```
-
-Suggested repository description: **Local coordination for coding agents:
-shared task cards, atomic path claims, and reliable handoffs.** Suggested
-topics: `ai-agents`, `agent-coordination`, `codex`, `claude-code`, `antigravity`,
-`developer-tools`, `sqlite`.
-
-The package name is local packaging metadata; no PyPI name or trademark
-availability is claimed. Review the MIT license and release notes before
-publishing. This project is independent and is not affiliated with the vendors
-of the coding agents it can coordinate.
-
-## Origin and license
-
-Agent Accord was extracted from a private project's shared coding-agent
-register and generalized for reuse. The extraction includes the coordination
-logic and protocol, with new installation, packaging, documentation, and tests.
-It contains no live task database, agent session history, customer data, or
-application source code. See [design](docs/design.md) for changes from the original.
+## License
 
 [MIT licensed](LICENSE).
