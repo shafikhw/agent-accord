@@ -1,0 +1,35 @@
+# Package metadata for an installable, dependency-free CLI and bundled skill.
+# Build: python -m pip wheel . --no-deps. Runtime: Python 3.10+ and Git.
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "agent-accord"
+version = "0.1.0"
+description = "A shared local work register for coding agents: claim paths, avoid collisions, and hand off with context."
+readme = "README.md"
+requires-python = ">=3.10"
+license = {file = "LICENSE"}
+authors = [{name = "Agent Accord contributors"}]
+keywords = ["agents", "coordination", "codex", "claude", "antigravity", "sqlite"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Environment :: Console",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Topic :: Software Development",
+]
+dependencies = []
+
+[project.scripts]
+agent-accord = "agent_accord.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+agent_accord = ["SKILL.md", "LICENSE"]
