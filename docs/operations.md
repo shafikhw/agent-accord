@@ -78,8 +78,19 @@ work. Never delete an active store to make a claim conflict disappear.
 | Instructions were edited | Reconcile the managed coordination block in `AGENTS.md` manually |
 | Installed command not found | Use the same Python environment for installation/execution, `python -m agent_accord`, or the copied CLI |
 | No new note appears | Check the identity, exact task ID, selected store, and whether another session acknowledged it |
+| Monitor launcher is missing | Update Agent Accord and run `init --upgrade` after reviewing the installed changes |
+| Double-click opens an editor on Linux | Execute the `.sh` in a terminal or use your desktop's executable-script setting |
+| Monitor URL no longer responds | Keep the launch terminal open, or use the project launcher to start a new server |
+| Monitor shows a different register | Launch with the same `--root` and `--store` arguments as the coding agents; launchers use the default store |
 
 `status` and non-acknowledging `inbox` reads do not initialize or modify an
 existing store. They still need Git root discovery and SQLite read access.
 Permission errors are surfaced; the tool never silently falls back to a
 different directory or turns off ownership checks.
+
+The monitor is intentionally local. Do not expose it through a public reverse
+proxy or use it as a hosted dashboard. A local process can read snapshots just
+as it can read the register; the HTTP interface does not add user authentication.
+Closing the browser tab alone does not stop the server. Close the terminal or
+press Ctrl+C when monitoring is finished. Repeated launches start separate
+servers; use a fixed `--port` and an existing browser tab if you prefer one URL.

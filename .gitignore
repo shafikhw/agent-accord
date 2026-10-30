@@ -1,6 +1,10 @@
 # Local register data must never be published with the reusable tool.
 /.agent-accord/
 /.agents/skills/agent-accord/
+# Generated project-specific monitor entrypoints; init recreates them.
+/Agent Accord Monitor.cmd
+/Agent Accord Monitor.command
+/Agent Accord Monitor.sh
 __pycache__/
 *.py[cod]
 .venv/

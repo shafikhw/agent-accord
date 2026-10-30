@@ -76,3 +76,14 @@ The register is advisory and local to one working tree. Separate clones,
 worktrees, machines, or containers with different path mappings do not
 automatically coordinate. Never infer that another agent saw a queued note or
 that a task card proves a test or deployment happened. Inspect actual evidence.
+
+## Human monitoring
+
+The project-root `Agent Accord Monitor` launcher opens a read-only browser
+dashboard. Alternatively, run the copied CLI with `monitor`, putting `--root`
+and `--store` before that command when needed. It shows cards, ownership,
+checkpoints, evidence, corrections, and the latest 200 messages. Opening it
+does not acknowledge notes or release claims. Report progress through the usual
+register commands; the dashboard refreshes every three seconds. It shows
+published checkpoints, not process liveness or a history of every previous
+checkpoint. Close its terminal or press Ctrl+C to stop the local server.

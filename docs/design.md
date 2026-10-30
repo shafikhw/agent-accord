@@ -10,12 +10,41 @@ its ownership rules part of each coding session's workflow.
 | --- | --- |
 | `src/agent_accord/cli.py` | Standalone CLI, path normalization, Git inspection, SQLite operations, installation |
 | `src/agent_accord/SKILL.md` | Portable session, claim, checkpoint, and handoff protocol |
+| `src/agent_accord/monitor.py` | Loopback HTTP reader and platform launcher generation |
+| `src/agent_accord/monitor_assets/` | Dependency-free, responsive monitoring UI |
 | `src/agent_accord/LICENSE` | License distributed with copied runtime |
 | `.agent-accord/register.sqlite3` | Ignored local state, created on first write |
 | Generated `AGENTS.md` block | Points project agents to the skill and CLI |
 
 The package entrypoint and copied runtime execute the same code. There is no
-agent SDK, provider API, telemetry endpoint, background service, or event loop.
+agent SDK, provider API, telemetry endpoint, or persistent background service.
+The optional monitor runs a local HTTP server for the lifetime of its terminal.
+
+## Read-only monitoring
+
+`monitor` runs a standard-library threaded HTTP server on IPv4 loopback,
+using an available port unless one is requested. Its three packaged assets
+and `/api/snapshot` are the only routes. Snapshots use read-only SQLite
+connections and a consistent transaction to include tasks, corrections,
+latest messages, and counts; no acknowledgement operation is called.
+
+The page polls every three seconds without overlapping requests. It retains
+the previous snapshot with a warning when reads fail. All register text is
+inserted using DOM `textContent`, and the server supplies a same-origin
+Content Security Policy, no-store caching, and restrictive Host/Origin/fetch
+checks. It exposes no mutation endpoints or arbitrary filesystem serving.
+The local filesystem user remains the trust boundary.
+
+Activity is derived from card creation, the current `updated_at` checkpoint,
+completion state, corrections, and recent messages. It does not fabricate
+an event history: previous checkpoint text/timestamps are not retained by
+the schema. Agent summaries therefore describe publication activity, not
+whether a tool process is alive. No schema migration is needed for monitoring.
+
+`init` copies the monitor and its assets next to `coord.py` and creates one
+platform-appropriate root launcher. The launcher is root-relative, uses
+Python on PATH, opens the browser, and leaves a terminal available to stop
+the server. No Python package installation is required in the target project.
 
 ## Transaction boundaries
 

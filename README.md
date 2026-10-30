@@ -9,7 +9,11 @@ over with a record of what was verified. A portable coordination skill teaches
 them the workflow.
 
 It runs on Python's standard library and SQLite. No API keys, model provider,
-server, cloud account, or runtime Python dependencies are required.
+external server, cloud account, or runtime Python dependencies are required.
+
+**Want to see the work as it happens?** The local monitoring dashboard shows
+agent activity, published cards, path ownership, and handoff evidence in your
+browser. [Open the monitor](#monitoring-dashboard).
 
 ## Why it exists
 
@@ -24,12 +28,7 @@ Agent Accord gives cooperating agents a common place to answer:
 - Are these existing edits authorized for me to continue?
 - What was checked, what is blocked, and what remains for the next agent?
 
-```text
-Codex ─────────┐                    ┌─ task cards and checkpoints
-Claude Code ───┼── Agent Accord ────┼─ atomic file/directory claims
-Antigravity ───┤   local SQLite     ├─ queued cross-agent messages
-Your agent ────┘                    └─ handoffs and corrections
-```
+![Codex, Claude Code, Antigravity, and other agents connect to Agent Accord's local SQLite register for task cards and checkpoints, atomic file/directory claims, queued cross-agent messages, and handoffs and corrections.](docs/images/agent-accord-architecture.png)
 
 Claims are advisory. The CLI prevents conflicting claims in its register;
 agents must follow the skill to prevent conflicting edits. It cannot stop an
@@ -74,10 +73,14 @@ For a new project, run `git init` in it first. `init` installs:
 your-project/
 ├── AGENTS.md                              # coordination block appended
 ├── .gitignore                             # /.agent-accord/ appended
+├── Agent Accord Monitor.cmd               # double-click to open on Windows
 └── .agents/skills/agent-accord/
     ├── SKILL.md                           # portable agent workflow
     ├── LICENSE                            # license travels with the copied runtime
-    └── scripts/coord.py                   # self-contained CLI
+    └── scripts/
+        ├── coord.py                       # portable CLI
+        ├── monitor.py                     # local read-only server
+        └── monitor_assets/                # dashboard HTML, CSS, and JavaScript
 ```
 
 Existing instructions and ignore entries are preserved. Identical installs
@@ -98,6 +101,57 @@ For team use, commit the generated skill, CLI, `AGENTS.md`, and `.gitignore` to
 the target project after review. Keep `.agent-accord/` ignored. If your existing
 ignore rules exclude `.agents/`, adjust those rules explicitly. Agent Accord
 does not stage or commit files. Each clone starts with an empty local register.
+
+## Monitoring dashboard
+
+After `init`, **double-click `Agent Accord Monitor.cmd` in your project's root
+folder** on Windows. It starts the monitor and opens your default browser.
+Keep its terminal window open while monitoring; close it or press Ctrl+C to
+stop. Python 3.10+ must be available on PATH (`python` or the Windows `py`
+launcher). No package installation is needed to use the copied monitor.
+
+On macOS, double-click the generated `Agent Accord Monitor.command`. On
+Linux, run `./"Agent Accord Monitor.sh"` in a terminal, or open it through a
+file manager configured to execute scripts. Launcher behavior depends on your
+desktop's script execution settings.
+
+You can also open it from any terminal:
+
+```sh
+agent-accord --root /path/to/your-project monitor
+# Or, from the target project's root, without installing the package:
+python .agents/skills/agent-accord/scripts/coord.py monitor
+```
+
+The dashboard includes:
+
+- **Agent overview:** each identity's open-card count and latest published update.
+- **Published cards:** filter by agent or status, search summaries and paths,
+  and open full evidence, claims, session references, and corrections.
+- **Ownership and attention:** counts of working cards, active/paused claims,
+  paused or stale cards, and completed handoffs.
+- **Recent activity:** card creation, the latest checkpoint, completions,
+  corrections, and recent coordination messages.
+- **Messages:** the latest 200 notes with their acknowledgement state. Viewing
+  them never consumes an inbox.
+
+It refreshes every three seconds and works without Internet access. It reads
+the local register only; it cannot finish cards, release claims, or send notes.
+Agent activity means **published checkpoints**, not process liveness or token
+usage. Earlier checkpoint versions are not retained by the register. When the
+connection fails, the last snapshot stays visible with a disconnected warning.
+
+The monitor binds only to `127.0.0.1` and chooses an available port. Use
+`monitor --port 8765` for a stable local bookmark, or `monitor --no-browser`
+to print its URL without opening a tab. A bookmark works while that server is
+running; the project launcher starts it again. Each launch starts a separate
+local server. Nothing is published to a remote website.
+
+For an existing installation, update your package/source checkout, review the
+changes, then run `agent-accord --root /path/to/your-project init --upgrade`
+to add the dashboard and launcher. If you use a custom store, pass it to the
+monitor as well: `agent-accord --root /path/to/project --store /local/register.sqlite3 monitor`.
+The double-click launcher uses the default project store.
 
 ## Give each agent the same protocol
 

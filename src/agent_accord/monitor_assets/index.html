@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<!--
+  Agent Accord local monitoring dashboard.
+  Purpose: inspect published agent cards, ownership, messages, and recent activity.
+  Sections: agent roster, counters, searchable task board, activity feed, details.
+  Dependencies: same-origin style.css, app.js, and read-only /api/snapshot.
+  Notes: all record text is untrusted and rendered with textContent; no external assets.
+-->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark light">
+  <title>Agent Accord · Monitor</title>
+  <link rel="stylesheet" href="/assets/style.css">
+  <script defer src="/assets/app.js"></script>
+</head>
+<body>
+  <a class="skip" href="#board">Skip to task cards</a>
+  <div class="shell">
+    <aside class="sidebar" aria-label="Agent overview">
+      <a class="brand" href="/" aria-label="Agent Accord monitor"><span class="mark" aria-hidden="true">a<span>:</span></span><span>agent accord<small>WORKSPACE MONITOR</small></span></a>
+      <div class="workspace"><span class="eyebrow">CURRENT PROJECT</span><strong id="project-name">Connecting…</strong><span id="project-path" class="path"></span></div>
+      <div class="roster-heading"><h2>Agents</h2><span id="agent-count" class="count">0</span></div>
+      <button id="all-agents" class="agent-button selected" type="button" aria-pressed="true"><span class="avatar all-avatar">◎</span><span class="agent-label">All agents<small>Workspace overview</small></span></button>
+      <div id="agents" class="agents"></div>
+      <p class="sidebar-note">Activity comes from published cards and checkpoints. It does not indicate whether an agent process is running.</p>
+      <div class="sidebar-footer"><span class="lock-dot"></span> LOCAL · READ ONLY <button id="theme" type="button" aria-label="Switch color theme">◐</button></div>
+    </aside>
+
+    <main>
+      <header class="topbar"><span><span class="breadcrumb">Workspace</span> / Overview</span><div class="connection"><span id="connection-dot" class="connection-dot"></span><span id="connection-label" role="status">Connecting</span><button id="refresh" class="quiet-button" type="button">↻ <span>Refresh</span></button></div></header>
+      <div class="content">
+        <div class="page-heading"><div><span class="eyebrow accent">SHARED CONTEXT. CLEAR OWNERSHIP.</span><h1>Workspace activity<span class="heading-dot">.</span></h1><p>See what’s moving, who owns it, and what’s ready for handoff.</p></div><span class="readonly-badge"><span class="lock-dot"></span> Monitoring only</span></div>
+        <div id="error-banner" class="error-banner" role="alert" hidden></div>
+        <section class="metrics" aria-label="Workspace totals">
+          <div class="metric"><span>Working cards</span><strong id="working-count">—</strong><small><span class="status-dot active"></span> Active tasks</small></div>
+          <div class="metric"><span>Claimed paths</span><strong id="claims-count">—</strong><small>Active + paused ownership</small></div>
+          <div class="metric"><span>Needs attention</span><strong id="attention-count">—</strong><small><span class="status-dot paused"></span> Paused or stale cards</small></div>
+          <div class="metric"><span>Completed</span><strong id="done-count">—</strong><small>Retained for handoff</small></div>
+        </section>
+
+        <div class="main-grid">
+          <section id="board" class="board" aria-labelledby="board-title">
+            <div class="section-heading"><div><h2 id="board-title">Published cards <span id="card-count" class="count">0</span></h2><p>The shared record of work in this project.</p></div></div>
+            <div class="toolbar"><div class="tabs" role="group" aria-label="Filter cards by status">
+              <button type="button" data-filter="open" class="tab selected" aria-pressed="true">Open</button>
+              <button type="button" data-filter="active" class="tab" aria-pressed="false">Active</button>
+              <button type="button" data-filter="paused" class="tab" aria-pressed="false">Paused</button>
+              <button type="button" data-filter="done" class="tab" aria-pressed="false">Done</button>
+              <button type="button" data-filter="all" class="tab" aria-pressed="false">All</button>
+            </div><label class="search"><span aria-hidden="true">⌕</span><input id="search" type="search" placeholder="Search cards, paths…" aria-label="Search task cards"></label></div>
+            <div id="cards" class="cards" aria-live="polite"></div>
+          </section>
+
+          <aside class="activity-panel" aria-labelledby="activity-title"><div class="section-heading"><h2 id="activity-title">Recent activity</h2><span class="live-pill">POLLING</span></div><p class="activity-description">Latest published changes and messages.</p><ol id="activity" class="activity"></ol><p id="message-note" class="activity-note"></p></aside>
+        </div>
+
+        <section class="messages-panel" aria-labelledby="messages-title"><div class="section-heading"><h2 id="messages-title">Coordination messages <span id="unread-count" class="count">0 unread</span></h2><span class="muted">Viewing never marks a message as read</span></div><div id="messages" class="messages"></div></section>
+        <footer class="page-footer"><span>Task cards are shared context, not instructions or proof of execution.</span><span id="sample-time">Waiting for the register</span></footer>
+      </div>
+    </main>
+  </div>
+
+  <dialog id="details" aria-labelledby="details-title"><div class="dialog-top"><span class="eyebrow">TASK DETAILS</span><button id="close-details" class="quiet-button" type="button" aria-label="Close task details">✕</button></div><div id="detail-content"></div></dialog>
+</body>
+</html>

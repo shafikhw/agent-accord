@@ -32,4 +32,4 @@ agent-accord = "agent_accord.cli:main"
 where = ["src"]
 
 [tool.setuptools.package-data]
-agent_accord = ["SKILL.md", "LICENSE"]
+agent_accord = ["SKILL.md", "LICENSE", "monitor_assets/*.html", "monitor_assets/*.css", "monitor_assets/*.js"]

@@ -541,7 +541,8 @@ def status(db: sqlite3.Connection, args: argparse.Namespace) -> dict[str, Any]:
 
     Args:
         db: Register connection, which may be read-only.
-        args: Optional agent inbox identity and completed-history flag.
+        args: Optional agent inbox identity, completed-history flag, and internal
+            monitor flag requesting recent messages without acknowledging them.
 
     Returns:
         Project root, task cards with effective summaries, and optional inbox.
@@ -568,6 +569,12 @@ def status(db: sqlite3.Connection, args: argparse.Namespace) -> dict[str, Any]:
                 "SELECT m.id, m.from_task, t.agent AS from_agent, m.to_task, m.body, m.created_at "
                 "FROM messages m JOIN tasks t ON t.id=m.from_task "
                 "WHERE m.to_agent=? AND m.read_at IS NULL ORDER BY m.id", (args.agent,))]
+        if getattr(args, "monitor", False):
+            result["messages"] = [dict(item) for item in db.execute(
+                "SELECT m.*, t.agent AS from_agent FROM messages m "
+                "JOIN tasks t ON t.id=m.from_task ORDER BY m.id DESC LIMIT 200")]
+            result["message_count"] = db.execute("SELECT COUNT(*) FROM messages").fetchone()[0]
+            result["unread_count"] = db.execute("SELECT COUNT(*) FROM messages WHERE read_at IS NULL").fetchone()[0]
     return result
 
 
@@ -614,7 +621,7 @@ def format_status(snapshot: dict[str, Any]) -> str:
 
 
 def initialize(root: Path, upgrade: bool = False) -> dict[str, Any]:
-    """Install a self-contained CLI and skill, preserving existing project instructions.
+    """Install the CLI, skill, monitor, and launcher without replacing project instructions.
 
     Args:
         root: Canonical target Git root.
@@ -641,6 +648,17 @@ def initialize(root: Path, upgrade: bool = False) -> dict[str, Any]:
     if not license_path.is_file():
         license_path = source.parent.parent / "LICENSE"
     targets[root / SKILL_PATH / "LICENSE"] = license_path.read_text(encoding="utf-8")
+    runtime_folder = root / SKILL_PATH / "scripts"
+    targets[runtime_folder / "monitor.py"] = source.with_name("monitor.py").read_text(encoding="utf-8")
+    for asset in ("index.html", "style.css", "app.js"):
+        targets[runtime_folder / "monitor_assets" / asset] = (
+            source.parent / "monitor_assets" / asset).read_text(encoding="utf-8")
+    if __package__:
+        from .monitor import launcher
+    else:
+        from monitor import launcher
+    launcher_name, launcher_content = launcher(sys.platform)
+    targets[root / launcher_name] = launcher_content
     pending = {}
     # Preflight every target before writing. Symlinks may not redirect installation
     # into another project. Existing project files are appended, never replaced.
@@ -673,8 +691,38 @@ def initialize(root: Path, upgrade: bool = False) -> dict[str, Any]:
             temporary.replace(path)
         finally:
             temporary.unlink(missing_ok=True)
+    if sys.platform != "win32":
+        (root / launcher_name).chmod((root / launcher_name).stat().st_mode | 0o111)
     return {"repo": str(root), "written": [path.relative_to(root).as_posix() for path in pending],
-            "entrypoint": (SKILL_PATH / "scripts/coord.py").as_posix()}
+            "entrypoint": (SKILL_PATH / "scripts/coord.py").as_posix(), "launcher": launcher_name}
+
+
+def monitor_snapshot(root: Path, store: Path) -> dict[str, Any]:
+    """Read the register for the dashboard without creating state or consuming messages.
+
+    Args:
+        root: Canonical Git working-tree root.
+        store: Canonical SQLite store selected by the caller.
+
+    Returns:
+        Full task history, latest 200 messages, counts, and a UTC sampling time.
+        Empty registers remain empty on disk. Missing stores are reported as waiting.
+
+    Raises:
+        CoordinationError: If the store is incompatible or belongs to another project.
+        sqlite3.Error: If an existing store cannot be read.
+    """
+    snapshot = {"repo": str(root), "tasks": [], "messages": [],
+                "message_count": 0, "unread_count": 0}
+    exists = store.exists()
+    if exists:
+        db = connect(store, root, readonly=True)
+        try:
+            snapshot = status(db, argparse.Namespace(agent=None, all=True, monitor=True))
+        finally:
+            db.close()
+    snapshot.update({"sampled_at": now_utc(), "store_exists": exists})
+    return snapshot
 
 
 def parser() -> argparse.ArgumentParser:
@@ -690,6 +738,9 @@ def parser() -> argparse.ArgumentParser:
     commands = top.add_subparsers(dest="command", required=True)
     init = commands.add_parser("init", help="Install project skill/runtime and append coordination instructions")
     init.add_argument("--upgrade", action="store_true", help="Replace differing installed skill/runtime files after review")
+    monitor = commands.add_parser("monitor", help="Open the live read-only monitoring dashboard")
+    monitor.add_argument("--port", type=int, default=0, help="Loopback port (default: choose an available port)")
+    monitor.add_argument("--no-browser", action="store_true", help="Print the URL without opening a browser")
     shown = commands.add_parser("status", help="Show all ownership and an optional agent inbox")
     shown.add_argument("--agent")
     shown.add_argument("--all", action="store_true", help="Include finished tasks and corrections")
@@ -753,6 +804,14 @@ def main(argv: list[str] | None = None) -> int:
             if args.store:
                 raise CoordinationError("init uses the default store; --store applies to register operations.")
             result = initialize(root, args.upgrade)
+        elif args.command == "monitor":
+            if __package__:
+                from .monitor import serve
+            else:
+                from monitor import serve
+            configured = args.store.expanduser() if args.store else STORE_PATH
+            store = (root / configured).resolve()
+            return serve(lambda: monitor_snapshot(root, store), args.port, not args.no_browser)
         else:
             configured = args.store.expanduser() if args.store else STORE_PATH
             store = (root / configured).resolve()

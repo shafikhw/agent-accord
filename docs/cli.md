@@ -20,6 +20,7 @@ root. An explicit `--root` must name the working-tree root itself.
 | Command | Required options | Optional options | Effect |
 | --- | --- | --- | --- |
 | `init` | None | `--upgrade` | Copy skill, license, and runtime; append project instructions and ignore entry |
+| `monitor` | None | `--port NUMBER`, `--no-browser` | Open a read-only local dashboard with automatic refresh |
 | `status` | None | `--agent ID`, `--text`, `--all` | Read every agent's active/paused cards; optionally include selected agent's unread inbox/history |
 | `register` | `--agent ID --summary TEXT` | `--session-ref TEXT` | Create active task; return `task_id` |
 | `claim` | `--task ID` and at least one scope | repeated `--path PATH`, repeated `--directory PATH`, `--adopt-existing` | Atomically acquire all scopes or reject all |
@@ -32,6 +33,33 @@ root. An explicit `--root` must name the working-tree root itself.
 `init` does not accept a custom `--store`; it installs instructions for the
 default location. For a custom local database, configure the same `--store`
 in every agent command and update your project's instructions accordingly.
+
+## Monitor
+
+```sh
+agent-accord --root /path/to/project monitor
+agent-accord --root /path/to/project --store /local/project.sqlite3 monitor --port 8765 --no-browser
+```
+
+`monitor` opens the default browser and serves until Ctrl+C or terminal close.
+It prints the loopback URL and lifecycle instructions, rather than a JSON
+operation result. `--port` defaults to zero (an available port selected by the
+OS); an occupied requested port produces an error. Ports outside 0-65535 are
+rejected. `--no-browser` suppresses automatic browser opening.
+
+The installer adds a relocatable root launcher for the current platform:
+`Agent Accord Monitor.cmd` on Windows, `.command` on macOS, or `.sh` on Linux.
+It preserves customized launchers unless `init --upgrade` is supplied. The
+launcher uses the copied runtime and the default project store. For a custom
+store, use the explicit command above. The monitor works before the first
+card is registered and does not create the database just by viewing it.
+
+The UI polls `GET /api/snapshot` every three seconds. Snapshots contain full
+task history and the latest 200 messages, with overall message/unread counts.
+Errors return HTTP 503; the page labels retained data as the last successful
+snapshot. The endpoint is loopback-only, does not enable CORS, and rejects
+foreign Host/Origin/browser fetch-site headers. Only fixed dashboard assets
+are served; no project source files or database download routes are exposed.
 
 ## Identity and field limits
 

@@ -54,6 +54,10 @@ def main() -> None:
         script = root / installed["entrypoint"]
         skill = script.parent.parent / "SKILL.md"
         assert skill.is_file() and (skill.parent / "LICENSE").is_file()
+        assert (root / installed["launcher"]).is_file()
+        assert (script.parent / "monitor.py").is_file()
+        for asset in ("index.html", "style.css", "app.js"):
+            assert (script.parent / "monitor_assets" / asset).is_file()
         assert not (root / ".agent-accord").exists(), "init unexpectedly created a database"
         owner = run("-m", "agent_accord", "register", "--agent", "codex", "--summary", "Wheel test", cwd=root)["task_id"]
         reviewer = run(str(script), "register", "--agent", "claude", "--summary", "Review test", cwd=root)["task_id"]
@@ -66,7 +70,7 @@ def main() -> None:
         run(str(script), "finish", "--task", reviewer, "--summary", "Review complete", cwd=root)
         assert run(str(script), "status", cwd=root)["tasks"] == []
         assert run(str(script), "init", cwd=root)["written"] == []
-    print(f"Installed wheel {__version__}: resources, standalone runtime, claim conflict, handoff, and idempotence passed.")
+    print(f"Installed wheel {__version__}: skill/monitor/launcher resources, standalone runtime, claim conflict, handoff, and idempotence passed.")
 
 
 if __name__ == "__main__":
